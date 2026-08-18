@@ -262,15 +262,20 @@
       sfxGain = audioCtx.createGain();
       sfxGain.gain.value = muted ? 0 : 0.28;
       sfxGain.connect(audioCtx.destination);
+
+      // iOS/WeChat can take a while to actually resume the audio session;
+      // firing a silent buffer synchronously in the same gesture nudges it
+      // awake faster than waiting on resume() alone.
+      try {
+        const buffer = audioCtx.createBuffer(1, 1, 22050);
+        const src = audioCtx.createBufferSource();
+        src.buffer = buffer;
+        src.connect(audioCtx.destination);
+        src.start(0);
+      } catch (e) {}
     }
-    const startMusicIfNeeded = () => {
-      if (!musicStarted) { musicStarted = true; scheduleMusicLoop(); }
-    };
-    if (audioCtx.state === 'suspended') {
-      audioCtx.resume().then(startMusicIfNeeded).catch(() => {});
-    } else {
-      startMusicIfNeeded();
-    }
+    if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
+    if (!musicStarted) { musicStarted = true; scheduleMusicLoop(); }
   }
   function toggleMute() {
     muted = !muted;
