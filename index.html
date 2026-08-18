@@ -29,6 +29,7 @@
     justify-content: center;
     height: 100vh;
     height: 100dvh;
+    height: calc(var(--vh, 1vh) * 100);
     width: 100%;
     padding: max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
     gap: 8px;
@@ -257,10 +258,10 @@
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       } catch (e) { return; }
       musicGain = audioCtx.createGain();
-      musicGain.gain.value = muted ? 0 : 0.24;
+      musicGain.gain.value = muted ? 0 : 0.4;
       musicGain.connect(audioCtx.destination);
       sfxGain = audioCtx.createGain();
-      sfxGain.gain.value = muted ? 0 : 0.28;
+      sfxGain.gain.value = muted ? 0 : 0.45;
       sfxGain.connect(audioCtx.destination);
 
       // iOS/WeChat can take a while to actually resume the audio session;
@@ -286,8 +287,8 @@
       if (sfxGain) sfxGain.gain.value = 0;
     } else {
       ensureAudio();
-      if (musicGain) musicGain.gain.value = 0.24;
-      if (sfxGain) sfxGain.gain.value = 0.28;
+      if (musicGain) musicGain.gain.value = 0.4;
+      if (sfxGain) sfxGain.gain.value = 0.45;
     }
   }
   soundBtn.addEventListener('pointerdown', (e) => {
@@ -353,7 +354,14 @@
   const GROUND_Y = 320;
   const DPR_CAP = 2.5;
 
+  function updateViewportHeight() {
+    const vv = window.visualViewport;
+    const h = vv ? vv.height : window.innerHeight;
+    document.documentElement.style.setProperty('--vh', (h * 0.01) + 'px');
+  }
+
   function resize() {
+    updateViewportHeight();
     const rect = stage.getBoundingClientRect();
     const dpr = Math.min(window.devicePixelRatio || 1, DPR_CAP);
     canvas.width = Math.round(rect.width * dpr);
@@ -362,6 +370,9 @@
   }
   window.addEventListener('resize', resize);
   window.addEventListener('orientationchange', () => setTimeout(resize, 200));
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', resize);
+  }
 
   const HIGH_KEY = 'rabbit_snake_highscore';
   let highScore = Number(localStorage.getItem(HIGH_KEY) || 0);
