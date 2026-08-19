@@ -37,6 +37,7 @@
     height: 100dvh;
     height: calc(var(--vh, 1vh) * 100);
     width: 100%;
+    transform: translateY(var(--voffset, 0px));
     padding: max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
     gap: 8px;
     overflow: hidden;
@@ -390,6 +391,14 @@
     const vv = window.visualViewport;
     const h = vv ? vv.height : window.innerHeight;
     document.documentElement.style.setProperty('--vh', (h * 0.01) + 'px');
+    // When Safari's landscape toolbar floats over the page instead of
+    // resizing it, visualViewport.height shrinks correctly but the page
+    // itself still starts at layout-viewport y=0 — right under the
+    // toolbar. offsetTop is how far the visible area has been pushed
+    // down; without shifting content by it, the top of the game stays
+    // hidden behind the toolbar while empty space appears at the bottom.
+    const top = vv ? vv.offsetTop : 0;
+    document.documentElement.style.setProperty('--voffset', top + 'px');
   }
 
   function resize() {
@@ -408,6 +417,9 @@
   window.addEventListener('orientationchange', () => setTimeout(resize, 200));
   if (window.visualViewport) {
     window.visualViewport.addEventListener('resize', resize);
+    // Safari can shift the toolbar overlay (changing offsetTop) without
+    // firing a visualViewport resize event — only scroll.
+    window.visualViewport.addEventListener('scroll', updateViewportHeight);
   }
 
   const HIGH_KEY = 'rabbit_snake_highscore';
