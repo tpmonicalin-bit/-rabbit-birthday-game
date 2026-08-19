@@ -371,6 +371,7 @@
     const dpr = Math.min(window.devicePixelRatio || 1, DPR_CAP);
     if (rect.width > 0 && rect.height > 0) {
       W = Math.max(500, Math.min(1400, H * (rect.width / rect.height)));
+      if (typeof rabbit !== 'undefined') rabbit.x = W * 0.18;
     }
     canvas.width = Math.round(rect.width * dpr);
     canvas.height = Math.round(rect.height * dpr);
@@ -389,7 +390,7 @@
   let state = STATE.START;
 
   const rabbit = {
-    x: 110, y: GROUND_Y, w: 54, h: 50,
+    x: W * 0.18, y: GROUND_Y, w: 54, h: 50,
     vy: 0, onGround: true,
     jumps: 0, maxJumps: 2,
     squash: 1,
