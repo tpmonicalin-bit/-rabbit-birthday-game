@@ -74,9 +74,7 @@
     flex: 1 1 auto;
     min-height: 0;
     min-width: 0;
-    max-width: 96vw;
-    max-height: 100%;
-    aspect-ratio: 800 / 400;
+    width: 100%;
     border-radius: 22px;
     overflow: hidden;
     box-shadow: 0 12px 30px rgba(120, 90, 140, 0.22), 0 0 0 6px #ffffff, 0 0 0 8px var(--pink-light);
@@ -357,7 +355,7 @@
     playTone(140, t + 0.02, 0.1, sfxGain, 'square', 0.12);
   }
 
-  const W = 800, H = 400;
+  let W = 800, H = 400;
   const GROUND_Y = 320;
   const DPR_CAP = 2.5;
 
@@ -371,6 +369,9 @@
     updateViewportHeight();
     const rect = stage.getBoundingClientRect();
     const dpr = Math.min(window.devicePixelRatio || 1, DPR_CAP);
+    if (rect.width > 0 && rect.height > 0) {
+      W = Math.max(500, Math.min(1400, H * (rect.width / rect.height)));
+    }
     canvas.width = Math.round(rect.width * dpr);
     canvas.height = Math.round(rect.height * dpr);
     ctx.setTransform(dpr * (rect.width / W), 0, 0, dpr * (rect.width / W), 0, 0);
