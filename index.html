@@ -211,7 +211,7 @@
   function updateSoundBtn() { soundBtn.textContent = muted ? '🔇' : '🔊'; }
   updateSoundBtn();
 
-  let audioCtx = null, musicGain = null, sfxGain = null, musicStarted = false;
+  let audioCtx = null, musicGain = null, sfxGain = null, musicStarted = false, nextLoopTime = 0;
   const NOTE_SEMITONE = { C: -9, D: -7, E: -5, F: -4, G: -2, A: 0, B: 2 };
   function noteFreq(name) {
     const m = name.match(/^([A-G])(\d)$/);
@@ -264,7 +264,15 @@
   ];
   function scheduleMusicLoop() {
     if (!audioCtx) return;
-    let t = audioCtx.currentTime + 0.05;
+    // Anchor each loop to the audio clock (not wall-clock) and never start
+    // before the previous loop's notes were due to finish. Without the
+    // Math.max guard, a suspended/throttled AudioContext (common on iOS/
+    // WeChat right after unlocking, or after backgrounding) lets currentTime
+    // stall while setTimeout keeps firing on real time, so a second loop's
+    // notes would get scheduled on top of the still-pending first loop —
+    // two melodies audibly overlapping once playback catches up.
+    const t0 = Math.max(audioCtx.currentTime + 0.05, nextLoopTime);
+    let t = t0;
     let total = 0;
     HB_MELODY.forEach(([n, beats]) => {
       const dur = beats * EIGHTH;
@@ -272,7 +280,9 @@
       t += dur;
       total += dur;
     });
-    setTimeout(scheduleMusicLoop, (total + LOOP_REST) * 1000);
+    nextLoopTime = t0 + total + LOOP_REST;
+    const delayMs = Math.max(50, (nextLoopTime - audioCtx.currentTime) * 1000);
+    setTimeout(scheduleMusicLoop, delayMs);
   }
   function ensureAudio() {
     if (!audioCtx) {
@@ -477,7 +487,10 @@
     speed = baseSpeed; elapsed = 0; score = 0;
     obstacles = []; carrots = []; cakes = []; particles = []; floaters = [];
     spawnTimer = 0; nextSpawnGap = 1.0;
-    carrotTimer = 0; nextCarrotGap = 0.5 + Math.random() * 0.5;
+    // first carrot should land well clear of the first snake so a
+    // beginner isn't forced into a precise jump-for-carrot-while-
+    // dodging-snake move right at the start
+    carrotTimer = 0; nextCarrotGap = 2.0 + Math.random() * 0.6;
     cakeTimer = 0; nextCakeGap = 5 + Math.random() * 4;
     groundOffset = 0;
     shakeT = 0; flashT = 0;
@@ -711,7 +724,11 @@
     if (carrotTimer >= nextCarrotGap) {
       carrotTimer = 0;
       nextCarrotGap = 0.5 + Math.random() * 0.7;
-      carrots.push(makeCarrot(Math.random() < 0.55));
+      const spawnX = W + 60;
+      // keep a low carrot from sitting right on top of a nearby snake —
+      // if an obstacle is close by, place this carrot up high instead
+      const snakeNearby = obstacles.some(o => Math.abs(o.x - spawnX) < 160);
+      carrots.push(makeCarrot(snakeNearby ? false : Math.random() < 0.55));
     }
     carrots.forEach(c => { c.x -= speed * dt; c.bob += dt * 6; });
     carrots = carrots.filter(c => c.x + c.w > -20 && !c.taken);
