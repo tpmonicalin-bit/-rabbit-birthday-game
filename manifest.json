@@ -1,6 +1,6 @@
 {
-  "name": "兔兔快跑",
-  "short_name": "兔兔快跑",
+  "name": "兔兔生日大冒险",
+  "short_name": "兔兔生日大冒险",
   "description": "送给老头头的生日礼物小游戏",
   "start_url": "./index.html",
   "display": "standalone",
